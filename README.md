@@ -122,17 +122,6 @@ Admin-Login standardmäßig unter:
 /admin/login
 ```
 
-## GitHub-Hinweis
-
-Diese Dateien sollten **nicht** ins Repository:
-
-- `.env`
-- SQLite-Datenbankdateien (`*.db`)
-- `data/`
-- `node_modules/`
-
-Dafür ist die `.gitignore` bereits vorbereitet.
-
 ## Lizenz
 
 Nach Bedarf ergänzen.
