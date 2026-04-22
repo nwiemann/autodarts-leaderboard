@@ -1,0 +1,20 @@
+services:
+  app:
+    build: .
+    container_name: autodarts_app
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      SESSION_SECRET: ${SESSION_SECRET}
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      DB_FILE: /app/data/league.db
+      TRUST_PROXY: "true"
+    volumes:
+      - leaderboard_data:/app/data
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  leaderboard_data:

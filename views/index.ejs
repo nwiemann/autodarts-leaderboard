@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autodarts Leaderboard</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Autodarts Turnierserie</p>
+      <h1>Leaderboard & Spielplan</h1>
+      <p class="lead">Öffentliche Tabelle für alle Teilnehmer. Ergebnisse und Paarungen werden im Adminbereich gepflegt.</p>
+    </div>
+    <nav>
+      <% if (isAuthenticated) { %>
+        <a class="button secondary" href="/admin">Adminbereich</a>
+      <% } else { %>
+        <a class="button secondary" href="/admin/login">Admin-Login</a>
+      <% } %>
+    </nav>
+  </header>
+
+  <main class="grid two-col">
+    <section class="card">
+      <div class="card-header">
+        <h2>Tabelle</h2>
+        <span><%= standings.length %> aktive Spieler</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Spieler</th>
+              <th>Sp</th>
+              <th>S</th>
+              <th>N</th>
+              <th>Legs</th>
+              <th>Diff</th>
+              <th>Pkte</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!standings.length) { %>
+              <tr><td colspan="8" class="muted">Noch keine Spieler angelegt.</td></tr>
+            <% } %>
+            <% standings.forEach((row) => { %>
+              <tr>
+                <td><%= row.rank %></td>
+                <td><strong><%= row.name %></strong></td>
+                <td><%= row.played %></td>
+                <td><%= row.wins %></td>
+                <td><%= row.losses %></td>
+                <td><%= row.legsFor %>:<%= row.legsAgainst %></td>
+                <td><%= row.legDiff %></td>
+                <td><strong><%= row.points %></strong></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Spielplan</h2>
+        <span><%= matches.length %> Spiele</span>
+      </div>
+      <div class="match-list">
+        <% if (!matches.length) { %>
+          <p class="muted">Noch keine Paarungen angelegt.</p>
+        <% } %>
+        <% matches.forEach((match) => { %>
+          <article class="match-item">
+            <div class="match-topline">
+              <span class="badge <%= match.status %>">
+                <%= match.status === 'played' ? 'gespielt' : match.status === 'postponed' ? 'verschoben' : 'geplant' %>
+              </span>
+              <span>Woche <%= match.week %></span>
+            </div>
+            <h3><%= match.home_name %> vs. <%= match.away_name %></h3>
+            <% if (match.status === 'played') { %>
+              <p class="score"><strong><%= match.home_legs %> : <%= match.away_legs %></strong></p>
+            <% } %>
+            <p class="meta">
+              <% if (match.scheduled_date) { %>Termin: <%= match.scheduled_date %><% } %>
+              <% if (match.played_at) { %> · Gespielt: <%= match.played_at %><% } %>
+            </p>
+            <% if (match.note) { %>
+              <p class="muted"><%= match.note %></p>
+            <% } %>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

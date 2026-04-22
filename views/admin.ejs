@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adminbereich</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="hero compact">
+    <div>
+      <p class="eyebrow">Admin</p>
+      <h1>Leaderboard verwalten</h1>
+      <p class="lead">Spieler anlegen, Paarungen pflegen und Ergebnisse eintragen.</p>
+    </div>
+    <div class="actions">
+      <a class="button secondary" href="/">Öffentliche Ansicht</a>
+      <form method="post" action="/admin/logout">
+        <button class="button" type="submit">Logout</button>
+      </form>
+    </div>
+  </header>
+
+  <% if (success === 'player_deleted') { %>
+    <div class="card" style="margin: 1.5rem auto 0; max-width: 1200px;">
+      <p style="margin: 0; color: #166534;"><strong>Spieler wurde gelöscht.</strong></p>
+    </div>
+  <% } %>
+
+  <% if (error === 'player_has_matches') { %>
+    <div class="card" style="margin: 1.5rem auto 0; max-width: 1200px;">
+      <p style="margin: 0; color: #b91c1c;"><strong>Spieler kann nicht gelöscht werden, da bereits Matches vorhanden sind.</strong></p>
+    </div>
+  <% } %>
+
+  <main class="grid admin-grid">
+    <section class="card">
+      <h2>Spieler anlegen</h2>
+      <form method="post" action="/admin/players" class="stack">
+        <label>
+          Name
+          <input type="text" name="name" placeholder="z. B. Nils" required />
+        </label>
+        <button class="button" type="submit">Spieler speichern</button>
+      </form>
+      <div class="list-block">
+        <% players.forEach((player) => { %>
+          <div class="list-row">
+            <span><strong><%= player.name %></strong> · <%= player.is_active ? 'aktiv' : 'inaktiv' %></span>
+            <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+              <form method="post" action="/admin/players/<%= player.id %>/toggle">
+                <button class="button secondary" type="submit"><%= player.is_active ? 'Deaktivieren' : 'Aktivieren' %></button>
+              </form>
+              <form method="post" action="/admin/players/<%= player.id %>/delete" onsubmit="return confirm('Spieler wirklich löschen? Das geht nur, wenn keine Matches vorhanden sind.');">
+                <button class="button danger" type="submit">Löschen</button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Paarung anlegen</h2>
+      <form method="post" action="/admin/matches" class="stack">
+        <label>
+          Woche
+          <input type="number" min="1" name="week" required />
+        </label>
+        <label>
+          Heimspieler
+          <select name="home_player_id" required>
+            <% players.filter((p) => p.is_active).forEach((player) => { %>
+              <option value="<%= player.id %>"><%= player.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Auswärtsspieler
+          <select name="away_player_id" required>
+            <% players.filter((p) => p.is_active).forEach((player) => { %>
+              <option value="<%= player.id %>"><%= player.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Geplanter Termin
+          <input type="date" name="scheduled_date" />
+        </label>
+        <label>
+          Notiz
+          <textarea name="note" rows="3" placeholder="Optional"></textarea>
+        </label>
+        <button class="button" type="submit">Paarung speichern</button>
+      </form>
+    </section>
+
+    <section class="card span-2">
+      <div class="card-header">
+        <h2>Ergebnisse & Spiele</h2>
+        <span><%= matches.length %> Einträge</span>
+      </div>
+      <div class="match-admin-list">
+        <% if (!matches.length) { %>
+          <p class="muted">Noch keine Spiele angelegt.</p>
+        <% } %>
+        <% matches.forEach((match) => { %>
+          <article class="match-item admin-item">
+            <div class="match-topline">
+              <span class="badge <%= match.status %>">
+                <%= match.status === 'played' ? 'gespielt' : match.status === 'postponed' ? 'verschoben' : 'geplant' %>
+              </span>
+              <span>Woche <%= match.week %></span>
+            </div>
+            <h3><%= match.home_name %> vs. <%= match.away_name %></h3>
+            <p class="muted">Geplant: <%= match.scheduled_date || 'offen' %> · Gespielt: <%= match.played_at || '—' %></p>
+            <div class="admin-actions-grid">
+              <form method="post" action="/admin/matches/<%= match.id %>/result" class="stack boxed-form">
+                <strong>Ergebnis eintragen</strong>
+                <div class="inline-grid">
+                  <label>
+                    <%= match.home_name %>
+                    <input type="number" min="0" name="home_legs" value="<%= match.home_legs ?? '' %>" required />
+                  </label>
+                  <label>
+                    <%= match.away_name %>
+                    <input type="number" min="0" name="away_legs" value="<%= match.away_legs ?? '' %>" required />
+                  </label>
+                </div>
+                <label>
+                  Gespielt am
+                  <input type="date" name="played_at" value="<%= match.played_at || '' %>" />
+                </label>
+                <label>
+                  Notiz
+                  <input type="text" name="note" value="<%= match.note || '' %>" />
+                </label>
+                <button class="button" type="submit">Speichern</button>
+              </form>
+
+              <form method="post" action="/admin/matches/<%= match.id %>/postpone" class="stack boxed-form">
+                <strong>Verschieben</strong>
+                <label>
+                  Grund / Notiz
+                  <input type="text" name="note" placeholder="z. B. Urlaub" />
+                </label>
+                <button class="button secondary" type="submit">Als verschoben markieren</button>
+              </form>
+
+              <form method="post" action="/admin/matches/<%= match.id %>/delete" class="stack boxed-form danger-zone" onsubmit="return confirm('Match wirklich löschen?');">
+                <strong>Eintrag löschen</strong>
+                <p class="muted">Löscht die Paarung dauerhaft.</p>
+                <button class="button danger" type="submit">Löschen</button>
+              </form>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+
+    <section class="card span-2">
+      <div class="card-header">
+        <h2>Aktuelle Tabelle</h2>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Spieler</th>
+              <th>Sp</th>
+              <th>S</th>
+              <th>N</th>
+              <th>Legs</th>
+              <th>Diff</th>
+              <th>Pkte</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% standings.forEach((row) => { %>
+              <tr>
+                <td><%= row.rank %></td>
+                <td><strong><%= row.name %></strong></td>
+                <td><%= row.played %></td>
+                <td><%= row.wins %></td>
+                <td><%= row.losses %></td>
+                <td><%= row.legsFor %>:<%= row.legsAgainst %></td>
+                <td><%= row.legDiff %></td>
+                <td><strong><%= row.points %></strong></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

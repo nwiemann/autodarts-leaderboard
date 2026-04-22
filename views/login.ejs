@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin-Login</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="centered-page">
+    <section class="card auth-card">
+      <p class="eyebrow">Adminbereich</p>
+      <h1>Login</h1>
+      <% if (error) { %>
+        <p class="alert"><%= error %></p>
+      <% } %>
+      <form method="post" action="/admin/login" class="stack">
+        <label>
+          Benutzername
+          <input type="text" name="username" required />
+        </label>
+        <label>
+          Passwort
+          <input type="password" name="password" required />
+        </label>
+        <button class="button" type="submit">Einloggen</button>
+        <a class="button secondary" href="/">Zurück</a>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
