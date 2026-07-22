@@ -66,32 +66,79 @@
     <section class="card">
       <div class="card-header">
         <h2>Spielplan</h2>
-        <span><%= matches.length %> Spiele</span>
+        <span><%= totalMatches %> Spiele insgesamt</span>
       </div>
-      <div class="match-list">
+
+      <form method="get" action="/" class="filter-form">
+        <label>
+          Spielwoche
+          <select name="week">
+            <option value="all">Alle Wochen</option>
+            <% matchWeeks.forEach((week) => { %>
+              <option value="<%= week %>" <%= filters.week === week ? 'selected' : '' %>>Woche <%= week %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Status
+          <select name="status">
+            <option value="all" <%= filters.status === 'all' ? 'selected' : '' %>>Alle Status</option>
+            <option value="open" <%= filters.status === 'open' ? 'selected' : '' %>>Offene Spiele</option>
+            <option value="scheduled" <%= filters.status === 'scheduled' ? 'selected' : '' %>>Geplant</option>
+            <option value="played" <%= filters.status === 'played' ? 'selected' : '' %>>Gespielt</option>
+            <option value="postponed" <%= filters.status === 'postponed' ? 'selected' : '' %>>Verschoben</option>
+          </select>
+        </label>
+        <label>
+          Spieler
+          <select name="player">
+            <option value="all">Alle Spieler</option>
+            <% players.forEach((player) => { %>
+              <option value="<%= player.id %>" <%= filters.player === player.id ? 'selected' : '' %>><%= player.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <div class="filter-actions">
+          <button class="button" type="submit">Filtern</button>
+          <a class="button secondary" href="/">Zurücksetzen</a>
+        </div>
+      </form>
+
+      <p class="filter-summary"><strong><%= matches.length %></strong> von <%= totalMatches %> Spielen werden angezeigt.</p>
+
+      <div class="match-week-list">
         <% if (!matches.length) { %>
-          <p class="muted">Noch keine Paarungen angelegt.</p>
+          <p class="empty-state">Für diese Filter wurden keine Spiele gefunden.</p>
         <% } %>
-        <% matches.forEach((match) => { %>
-          <article class="match-item">
-            <div class="match-topline">
-              <span class="badge <%= match.status %>">
-                <%= match.status === 'played' ? 'gespielt' : match.status === 'postponed' ? 'verschoben' : 'geplant' %>
-              </span>
-              <span>Woche <%= match.week %></span>
+        <% matchGroups.forEach((group) => { %>
+          <details class="week-group" <%= group.week === openWeek ? 'open' : '' %>>
+            <summary>
+              <span>Woche <%= group.week %></span>
+              <span class="week-count"><%= group.matches.length %> <%= group.matches.length === 1 ? 'Spiel' : 'Spiele' %></span>
+            </summary>
+            <div class="match-list">
+              <% group.matches.forEach((match) => { %>
+                <article class="match-item">
+                  <div class="match-topline">
+                    <span class="badge <%= match.status %>">
+                      <%= match.status === 'played' ? 'gespielt' : match.status === 'postponed' ? 'verschoben' : 'geplant' %>
+                    </span>
+                  </div>
+                  <h3><%= match.home_name %> vs. <%= match.away_name %></h3>
+                  <% if (match.status === 'played') { %>
+                    <p class="score"><strong><%= match.home_legs %> : <%= match.away_legs %></strong></p>
+                  <% } %>
+                  <p class="meta">
+                    <% if (match.scheduled_date) { %>Termin: <%= match.scheduled_date %><% } %>
+                    <% if (match.played_at) { %> · Gespielt: <%= match.played_at %><% } %>
+                  </p>
+                  <% if (match.note) { %>
+                    <p class="muted"><%= match.note %></p>
+                  <% } %>
+                </article>
+              <% }) %>
             </div>
-            <h3><%= match.home_name %> vs. <%= match.away_name %></h3>
-            <% if (match.status === 'played') { %>
-              <p class="score"><strong><%= match.home_legs %> : <%= match.away_legs %></strong></p>
-            <% } %>
-            <p class="meta">
-              <% if (match.scheduled_date) { %>Termin: <%= match.scheduled_date %><% } %>
-              <% if (match.played_at) { %> · Gespielt: <%= match.played_at %><% } %>
-            </p>
-            <% if (match.note) { %>
-              <p class="muted"><%= match.note %></p>
-            <% } %>
-          </article>
+          </details>
         <% }) %>
       </div>
     </section>

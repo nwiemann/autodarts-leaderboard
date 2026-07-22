@@ -31,6 +31,17 @@ node server.js
 
 Danach ist die App standardmäßig unter `http://localhost:3000` erreichbar.
 
+## Tests
+
+Die automatisierten Tests prüfen den Admin-Login, den vollständigen Spieler- und
+Match-CRUD-Ablauf mit einer isolierten In-Memory-SQLite-Datenbank, die Matchfilter,
+die Wochen-Gruppierung, die Abwärtskompatibilität der ungefilterten API-Abfrage
+und das Rendering der öffentlichen sowie der administrativen Ansicht:
+
+```bash
+npm test
+```
+
 ## Start mit Docker
 
 Image bauen:
@@ -113,6 +124,32 @@ Danach nginx testen und neu laden:
 sudo nginx -t
 sudo systemctl reload nginx
 ```
+
+## Produktionsupdate ohne Datenverlust
+
+Die SQLite-Datenbank liegt im Docker-Volume `leaderboard_data` und nicht im
+Anwendungs-Image. Ein neues Image kann deshalb ausgerollt werden, ohne Spieler,
+Matches oder Ergebnisse zu überschreiben.
+
+Vor jedem Update sollte trotzdem eine Sicherung der Datenbank erstellt werden:
+
+```bash
+docker compose stop app
+docker cp autodarts_app:/app/data/league.db ./league-backup.db
+docker compose build app
+docker compose up -d app
+```
+
+Wichtig: `docker compose down -v` löscht das Volume und darf bei einem normalen
+Update nicht verwendet werden.
+
+Die Filterfunktion benötigt keine Änderung am Datenbankschema und ist vollständig
+mit bestehenden `league.db`-Dateien kompatibel. Für zukünftige Schemaänderungen gilt:
+
+- vor dem Deployment eine Sicherung der produktiven Datenbank erstellen
+- Änderungen nur über nachvollziehbare, additive Migrationen einführen
+- jede Migration zuerst mit einer Kopie der produktiven Datenbank testen
+- bestehende Spalten und Datenformate nicht ohne gesonderten Migrationspfad entfernen
 
 ## Adminbereich
 

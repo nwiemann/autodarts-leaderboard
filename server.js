@@ -3,6 +3,14 @@ const session = require('express-session');
 const Database = require('better-sqlite3');
 const path = require('path');
 const crypto = require('crypto');
+const fs = require('fs');
+const {
+  buildMatchFilterSql,
+  getDefaultOpenWeek,
+  groupMatchesByWeek,
+  normalizeMatchFilters,
+  serializeMatchFilters
+} = require('./lib/match-filters');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,6 +23,10 @@ const TRUST_PROXY = (process.env.TRUST_PROXY || '').toLowerCase() === 'true';
 
 if (TRUST_PROXY) {
   app.set('trust proxy', 1);
+}
+
+if (DB_FILE !== ':memory:') {
+  fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
 }
 
 const db = new Database(DB_FILE);
@@ -103,7 +115,14 @@ function getPlayers() {
   return db.prepare('SELECT * FROM players ORDER BY LOWER(name) ASC').all();
 }
 
-function getMatches() {
+function getAdminRedirectUrl(query = {}) {
+  const filters = normalizeMatchFilters(query, 'open');
+  return `/admin?${serializeMatchFilters(filters)}`;
+}
+
+function getMatches(filters = {}) {
+  const { whereClause, params } = buildMatchFilterSql(filters);
+
   return db.prepare(`
     SELECT
       m.*,
@@ -112,8 +131,19 @@ function getMatches() {
     FROM matches m
     JOIN players hp ON hp.id = m.home_player_id
     JOIN players ap ON ap.id = m.away_player_id
+    ${whereClause}
     ORDER BY m.week ASC, COALESCE(m.played_at, m.scheduled_date, m.created_at) ASC, m.id ASC
-  `).all();
+  `).all(...params);
+}
+
+function getMatchWeeks() {
+  return db.prepare('SELECT DISTINCT week FROM matches ORDER BY week ASC')
+    .all()
+    .map((row) => row.week);
+}
+
+function getMatchCount() {
+  return db.prepare('SELECT COUNT(*) AS count FROM matches').get().count;
 }
 
 function getStandings() {
@@ -177,10 +207,19 @@ function getStandings() {
 }
 
 app.get('/', (req, res) => {
+  const players = getPlayers();
+  const filters = normalizeMatchFilters(req.query, 'all');
+  const matches = getMatches(filters);
+
   res.render('index', {
     standings: getStandings(),
-    matches: getMatches(),
-    players: getPlayers()
+    matches,
+    matchGroups: groupMatchesByWeek(matches),
+    totalMatches: getMatchCount(),
+    matchWeeks: getMatchWeeks(),
+    openWeek: getDefaultOpenWeek(matches, filters.week),
+    filters,
+    players
   });
 });
 
@@ -189,7 +228,7 @@ app.get('/api/standings', (req, res) => {
 });
 
 app.get('/api/matches', (req, res) => {
-  res.json(getMatches());
+  res.json(getMatches(normalizeMatchFilters(req.query, 'all')));
 });
 
 app.get('/admin/login', (req, res) => {
@@ -215,10 +254,20 @@ app.post('/admin/logout', requireAuth, (req, res) => {
 });
 
 app.get('/admin', requireAuth, (req, res) => {
+  const players = getPlayers();
+  const filters = normalizeMatchFilters(req.query, 'open');
+  const matches = getMatches(filters);
+
   res.render('admin', {
     standings: getStandings(),
-    matches: getMatches(),
-    players: getPlayers(),
+    matches,
+    matchGroups: groupMatchesByWeek(matches),
+    totalMatches: getMatchCount(),
+    matchWeeks: getMatchWeeks(),
+    openWeek: getDefaultOpenWeek(matches, filters.week),
+    filterQuery: serializeMatchFilters(filters),
+    filters,
+    players,
     success: req.query.success || '',
     error: req.query.error || ''
   });
@@ -294,7 +343,7 @@ app.post('/admin/matches/:id/result', requireAuth, (req, res) => {
     `).run(homeLegs, awayLegs, playedAt, note, id);
   }
 
-  res.redirect('/admin');
+  res.redirect(getAdminRedirectUrl(req.query));
 });
 
 app.post('/admin/matches/:id/postpone', requireAuth, (req, res) => {
@@ -305,16 +354,24 @@ app.post('/admin/matches/:id/postpone', requireAuth, (req, res) => {
     SET status = 'postponed', note = ?
     WHERE id = ?
   `).run(note, id);
-  res.redirect('/admin');
+  res.redirect(getAdminRedirectUrl(req.query));
 });
 
 app.post('/admin/matches/:id/delete', requireAuth, (req, res) => {
   const id = Number(req.params.id);
   db.prepare('DELETE FROM matches WHERE id = ?').run(id);
-  res.redirect('/admin');
+  res.redirect(getAdminRedirectUrl(req.query));
 });
 
-app.listen(PORT, () => {
-  console.log(`Autodarts leaderboard läuft auf Port ${PORT}`);
-  console.log(`Admin: ${ADMIN_USER}`);
-});
+function startServer(port = PORT) {
+  return app.listen(port, () => {
+    console.log(`Autodarts leaderboard läuft auf Port ${port}`);
+    console.log(`Admin: ${ADMIN_USER}`);
+  });
+}
+
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { app, db, startServer };

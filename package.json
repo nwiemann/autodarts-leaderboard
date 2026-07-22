@@ -5,7 +5,8 @@
   "description": "Autodarts league leaderboard with admin area",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",
