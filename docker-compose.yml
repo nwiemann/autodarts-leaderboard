@@ -14,7 +14,7 @@ services:
     volumes:
       - leaderboard_data:/app/data
     ports:
-      - "127.0.0.1:3001:3000"
+      - "0.0.0.0:3001:3000"
 
 volumes:
   leaderboard_data:

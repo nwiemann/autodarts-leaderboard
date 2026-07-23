@@ -85,7 +85,7 @@ services:
     volumes:
       - leaderboard_data:/app/data
     ports:
-      - "127.0.0.1:3001:3000"
+      - "0.0.0.0:3001:3000"
 
 volumes:
   leaderboard_data:
@@ -165,6 +165,11 @@ unterschiedlichen Projekt- oder Volume-Einstellungen arbeiten.
 - `TRUST_PROXY` – auf `true`, wenn die App hinter nginx läuft
 
 ## nginx Reverse Proxy Beispiel
+
+Durch die Bindung an `0.0.0.0:3001` kann ein Reverse Proxy auf einem anderen
+Rechner oder in einem anderen Docker-Netzwerk die App über die LAN-Adresse des
+Raspberry Pi erreichen. Für Nginx Proxy Manager wird als Forward Host/IP
+beispielsweise `192.168.10.12` und als Forward Port `3001` eingetragen.
 
 ```nginx
 server {
