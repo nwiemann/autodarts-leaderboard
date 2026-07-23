@@ -236,4 +236,4 @@ Admin-Login standardmäßig unter:
 
 ## Lizenz
 
-Nach Bedarf ergänzen.
+Dieses Projekt steht unter der [MIT-Lizenz](LICENSE).

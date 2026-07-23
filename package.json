@@ -2,6 +2,7 @@
   "name": "autodarts-leaderboard",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "description": "Autodarts league leaderboard with admin area",
   "main": "server.js",
   "scripts": {
