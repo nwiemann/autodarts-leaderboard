@@ -80,9 +80,14 @@ docker compose config --quiet
 echo "Baue das neue Image ..."
 docker compose build --pull app
 
+if docker container inspect "${container_name}" >/dev/null 2>&1; then
+  echo "Stoppe den bisherigen App-Container ..."
+  docker container stop "${container_name}"
+fi
+
 if [[ "${unmanaged_existing_container}" == "true" ]]; then
   echo "Ersetze den bisher nicht von Compose verwalteten Container ..."
-  docker container rm --force "${container_name}"
+  docker container rm "${container_name}"
 fi
 
 echo "Starte die aktualisierte Anwendung ..."
