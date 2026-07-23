@@ -85,7 +85,7 @@ services:
     volumes:
       - leaderboard_data:/app/data
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3000"
 
 volumes:
   leaderboard_data:
@@ -172,7 +172,7 @@ server {
     server_name 192.168.10.12;
 
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3001;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
