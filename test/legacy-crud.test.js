@@ -134,6 +134,34 @@ test('supports the legacy player and match CRUD workflow', async () => {
     }
   );
 
+  const extraMatchIds = [];
+  extraMatchIds.push(db.prepare(`
+    INSERT INTO matches (week, home_player_id, away_player_id, status, note)
+    VALUES (1, ?, ?, 'postponed', 'Old postponed match')
+  `).run(alice.id, bob.id).lastInsertRowid);
+  extraMatchIds.push(db.prepare(`
+    INSERT INTO matches (week, home_player_id, away_player_id, status)
+    VALUES (2, ?, ?, 'played')
+  `).run(alice.id, bob.id).lastInsertRowid);
+
+  const defaultPublicResponse = await request('/');
+  assert.equal(defaultPublicResponse.status, 200);
+  const defaultPublicHtml = await defaultPublicResponse.text();
+  assert.match(defaultPublicHtml, /<option value="3" selected>Woche 3<\/option>/);
+  assert.match(defaultPublicHtml, /<strong>1<\/strong> von 3 Spielen/);
+
+  const allPublicResponse = await request('/?week=all&status=all&player=all');
+  assert.equal(allPublicResponse.status, 200);
+  const allPublicHtml = await allPublicResponse.text();
+  assert.match(allPublicHtml, /<option value="all" selected>Alle Wochen<\/option>/);
+  assert.match(allPublicHtml, /<strong>3<\/strong> von 3 Spielen/);
+
+  const matchesApiResponse = await request('/api/matches');
+  assert.equal(matchesApiResponse.status, 200);
+  assert.equal((await matchesApiResponse.json()).length, 3);
+
+  db.prepare('DELETE FROM matches WHERE id IN (?, ?)').run(...extraMatchIds);
+
   const protectedDeleteResponse = await request(`/admin/players/${alice.id}/delete`, {
     method: 'POST',
     cookie: adminCookie

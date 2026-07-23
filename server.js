@@ -6,8 +6,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const {
   buildMatchFilterSql,
-  getDefaultOpenWeek,
-  groupMatchesByWeek,
+  getRelevantMatchWeek,
   normalizeMatchFilters,
   serializeMatchFilters
 } = require('./lib/match-filters');
@@ -209,15 +208,20 @@ function getStandings() {
 app.get('/', (req, res) => {
   const players = getPlayers();
   const filters = normalizeMatchFilters(req.query, 'all');
+  const hasExplicitWeekFilter = Object.prototype.hasOwnProperty.call(req.query, 'week');
+
+  if (!hasExplicitWeekFilter) {
+    const relevantWeek = getRelevantMatchWeek(getMatches(normalizeMatchFilters({}, 'all')));
+    if (Number.isInteger(relevantWeek)) filters.week = relevantWeek;
+  }
+
   const matches = getMatches(filters);
 
   res.render('index', {
     standings: getStandings(),
     matches,
-    matchGroups: groupMatchesByWeek(matches),
     totalMatches: getMatchCount(),
     matchWeeks: getMatchWeeks(),
-    openWeek: getDefaultOpenWeek(matches, filters.week),
     filters,
     players
   });
@@ -261,10 +265,8 @@ app.get('/admin', requireAuth, (req, res) => {
   res.render('admin', {
     standings: getStandings(),
     matches,
-    matchGroups: groupMatchesByWeek(matches),
     totalMatches: getMatchCount(),
     matchWeeks: getMatchWeeks(),
-    openWeek: getDefaultOpenWeek(matches, filters.week),
     filterQuery: serializeMatchFilters(filters),
     filters,
     players,

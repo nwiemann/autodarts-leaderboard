@@ -3,8 +3,7 @@ const assert = require('node:assert/strict');
 
 const {
   buildMatchFilterSql,
-  getDefaultOpenWeek,
-  groupMatchesByWeek,
+  getRelevantMatchWeek,
   normalizeMatchFilters,
   serializeMatchFilters
 } = require('../lib/match-filters');
@@ -57,28 +56,22 @@ test('keeps the unfiltered API query backward compatible', () => {
   );
 });
 
-test('groups ordered matches by week', () => {
+test('selects the first regularly scheduled week for the public default', () => {
   const matches = [
-    { id: 1, week: 1 },
-    { id: 2, week: 1 },
-    { id: 3, week: 2 }
+    { week: 4, status: 'scheduled' },
+    { week: 1, status: 'postponed' },
+    { week: 3, status: 'scheduled' },
+    { week: 2, status: 'played' }
   ];
 
-  assert.deepEqual(groupMatchesByWeek(matches), [
-    { week: 1, matches: [matches[0], matches[1]] },
-    { week: 2, matches: [matches[2]] }
-  ]);
+  assert.equal(getRelevantMatchWeek(matches), 3);
 });
 
-test('opens a selected week or otherwise the first week with an open match', () => {
-  const matches = [
-    { week: 1, status: 'played' },
-    { week: 2, status: 'scheduled' },
-    { week: 3, status: 'postponed' }
-  ];
-
-  assert.equal(getDefaultOpenWeek(matches, 3), 3);
-  assert.equal(getDefaultOpenWeek(matches, 'all'), 2);
-  assert.equal(getDefaultOpenWeek([{ week: 4, status: 'played' }], 'all'), 4);
-  assert.equal(getDefaultOpenWeek([], 'all'), null);
+test('falls back to the latest existing week when no regular match is open', () => {
+  assert.equal(getRelevantMatchWeek([
+    { week: 2, status: 'postponed' },
+    { week: 5, status: 'played' },
+    { week: 4, status: 'played' }
+  ]), 5);
+  assert.equal(getRelevantMatchWeek([]), null);
 });

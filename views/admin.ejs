@@ -105,7 +105,7 @@
         <label>
           Spielwoche
           <select name="week">
-            <option value="all">Alle Wochen</option>
+            <option value="all" <%= filters.week === 'all' ? 'selected' : '' %>>Alle Wochen</option>
             <% matchWeeks.forEach((week) => { %>
               <option value="<%= week %>" <%= filters.week === week ? 'selected' : '' %>>Woche <%= week %></option>
             <% }) %>
@@ -124,7 +124,7 @@
         <label>
           Spieler
           <select name="player">
-            <option value="all">Alle Spieler</option>
+            <option value="all" <%= filters.player === 'all' ? 'selected' : '' %>>Alle Spieler</option>
             <% players.forEach((player) => { %>
               <option value="<%= player.id %>" <%= filters.player === player.id ? 'selected' : '' %>><%= player.name %></option>
             <% }) %>
@@ -138,27 +138,30 @@
 
       <p class="filter-summary"><strong><%= matches.length %></strong> von <%= totalMatches %> Spielen werden angezeigt.</p>
 
-      <div class="match-admin-list match-week-list">
+      <div class="match-admin-list">
         <% if (!matches.length) { %>
           <p class="empty-state">Für diese Filter wurden keine Spiele gefunden.</p>
         <% } %>
-        <% matchGroups.forEach((group) => { %>
-          <details class="week-group" <%= group.week === openWeek ? 'open' : '' %>>
-            <summary>
-              <span>Woche <%= group.week %></span>
-              <span class="week-count"><%= group.matches.length %> <%= group.matches.length === 1 ? 'Spiel' : 'Spiele' %></span>
+        <% matches.forEach((match) => { %>
+          <details class="match-item admin-item">
+            <summary class="admin-match-summary">
+              <span>
+                <strong><%= match.home_name %> vs. <%= match.away_name %></strong>
+                <span class="admin-match-week">Woche <%= match.week %></span>
+              </span>
+              <span class="admin-summary-actions">
+                <span class="badge <%= match.status %>">
+                  <%= match.status === 'played' ? 'gespielt' : match.status === 'postponed' ? 'verschoben' : 'geplant' %>
+                </span>
+                <span class="edit-label">
+                  <span class="edit-open">Bearbeiten</span>
+                  <span class="edit-close">Schließen</span>
+                </span>
+              </span>
             </summary>
-            <div class="match-list">
-              <% group.matches.forEach((match) => { %>
-                <article class="match-item admin-item">
-                  <div class="match-topline">
-                    <span class="badge <%= match.status %>">
-                      <%= match.status === 'played' ? 'gespielt' : match.status === 'postponed' ? 'verschoben' : 'geplant' %>
-                    </span>
-                  </div>
-                  <h3><%= match.home_name %> vs. <%= match.away_name %></h3>
-                  <p class="muted">Geplant: <%= match.scheduled_date || 'offen' %> · Gespielt: <%= match.played_at || '—' %></p>
-                  <div class="admin-actions-grid">
+            <div class="admin-match-content">
+              <p class="muted">Geplant: <%= match.scheduled_date || 'offen' %> · Gespielt: <%= match.played_at || '—' %></p>
+              <div class="admin-actions-grid">
                     <form method="post" action="/admin/matches/<%= match.id %>/result?<%= filterQuery %>" class="stack boxed-form">
                       <strong>Ergebnis eintragen</strong>
                       <div class="inline-grid">
@@ -196,9 +199,7 @@
                       <p class="muted">Löscht die Paarung dauerhaft.</p>
                       <button class="button danger" type="submit">Löschen</button>
                     </form>
-                  </div>
-                </article>
-              <% }) %>
+              </div>
             </div>
           </details>
         <% }) %>

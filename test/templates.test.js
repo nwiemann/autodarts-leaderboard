@@ -31,10 +31,8 @@ function createViewData() {
     standings: [],
     players,
     matches,
-    matchGroups: [{ week: 2, matches }],
     totalMatches: 6,
     matchWeeks: [1, 2, 3],
-    openWeek: 2,
     filterQuery: 'status=open&week=2',
     filters: { week: 2, status: 'open', player: 'all' },
     success: '',
@@ -42,7 +40,7 @@ function createViewData() {
   };
 }
 
-test('renders public filters and grouped match weeks', async () => {
+test('renders public filters and compact matches without week accordions', async () => {
   const html = await ejs.renderFile(
     path.join(viewsDirectory, 'index.ejs'),
     createViewData()
@@ -51,18 +49,26 @@ test('renders public filters and grouped match weeks', async () => {
   assert.match(html, /name="week"/);
   assert.match(html, /name="status"/);
   assert.match(html, /name="player"/);
-  assert.match(html, /<details class="week-group" open>/);
+  assert.match(html, /<details class="match-item compact-match-item">/);
+  assert.match(html, /class="info-trigger"/);
+  assert.doesNotMatch(html, /class="week-group"/);
+  assert.doesNotMatch(html, /class="badge scheduled"/);
   assert.match(html, /1<\/strong> von 6 Spielen/);
-  assert.match(html, /Alice vs\. Bob/);
+  assert.match(html, /Alice/);
+  assert.match(html, /Bob/);
+  assert.match(html, /Spielwoche/);
 });
 
-test('renders admin filters and preserves them in match actions', async () => {
+test('renders compact admin matches and preserves filters in match actions', async () => {
   const html = await ejs.renderFile(
     path.join(viewsDirectory, 'admin.ejs'),
     { ...createViewData(), isAuthenticated: true }
   );
 
   assert.match(html, /Offene Spiele/);
+  assert.match(html, /<details class="match-item admin-item">/);
+  assert.match(html, /class="admin-match-summary"/);
+  assert.doesNotMatch(html, /class="week-group"/);
   assert.match(html, /\/result\?status=open&amp;week=2/);
   assert.match(html, /\/postpone\?status=open&amp;week=2/);
   assert.match(html, /\/delete\?status=open&amp;week=2/);

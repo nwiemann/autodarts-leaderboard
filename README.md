@@ -35,8 +35,8 @@ Danach ist die App standardmäßig unter `http://localhost:3000` erreichbar.
 
 Die automatisierten Tests prüfen den Admin-Login, den vollständigen Spieler- und
 Match-CRUD-Ablauf mit einer isolierten In-Memory-SQLite-Datenbank, die Matchfilter,
-die Wochen-Gruppierung, die Abwärtskompatibilität der ungefilterten API-Abfrage
-und das Rendering der öffentlichen sowie der administrativen Ansicht:
+die Auswahl der relevanten Spielwoche, die Abwärtskompatibilität der ungefilterten
+API-Abfrage und das Rendering der öffentlichen sowie der administrativen Ansicht:
 
 ```bash
 npm test
