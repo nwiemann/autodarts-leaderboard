@@ -77,9 +77,9 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: production
-      SESSION_SECRET: ${SESSION_SECRET}
-      ADMIN_USER: ${ADMIN_USER}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET muss gesetzt sein}
+      ADMIN_USER: ${ADMIN_USER:?ADMIN_USER muss gesetzt sein}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD muss gesetzt sein}
       DB_FILE: /app/data/league.db
       TRUST_PROXY: "true"
     volumes:
@@ -89,7 +89,72 @@ services:
 
 volumes:
   leaderboard_data:
+    name: ${DATA_VOLUME_NAME:?DATA_VOLUME_NAME muss gesetzt sein}
 ```
+
+## Einfaches Deployment auf dem Raspberry Pi
+
+Für dieses Projekt ist kein Container-Registry-Workflow erforderlich. Das
+Repository wird direkt auf dem Raspberry Pi ausgecheckt und dort gebaut.
+
+Beim ersten Einsatz das Repository klonen und in den Projektordner wechseln:
+
+```bash
+git clone https://github.com/nwiemann/autodarts-leaderboard.git
+cd autodarts-leaderboard
+```
+
+Danach eine nicht versionierte `.env`-Datei anlegen:
+
+```dotenv
+SESSION_SECRET=ein-langes-zufaelliges-secret
+ADMIN_USER=admin
+ADMIN_PASSWORD=ein-sicheres-passwort
+```
+
+Bei der Übernahme einer vorhandenen Installation müssen hier die bisherigen
+Werte aus dem Portainer-Stack eingetragen werden. Insbesondere sollte
+`ADMIN_USER` nicht unbeabsichtigt geändert werden; das Passwort wird nur beim
+erstmaligen Anlegen eines Admin-Benutzers aus der Umgebungsvariable übernommen.
+
+Das Deployment erfolgt anschließend mit:
+
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
+Das Skript führt einen Fast-Forward-Git-Pull aus, prüft die Compose-Konfiguration,
+baut das Image mit einem aktuellen Basis-Image und startet den App-Container neu.
+Portainer kann weiterhin zur Anzeige von Logs, Status und Ressourcen verwendet
+werden; das eigentliche Deployment erfolgt über das Skript.
+
+### Übernahme eines bestehenden Portainer-Stacks
+
+Wenn `autodarts_app` bereits läuft, erkennt das Skript automatisch das an
+`/app/data` eingehängte Docker-Volume sowie den bisherigen Compose-Projektnamen
+und verwendet beide weiter. Dadurch bleibt die vorhandene SQLite-Datenbank
+erhalten und der Portainer-Container kann ohne Namenskonflikt aktualisiert
+werden. Bei abweichenden, explizit gesetzten Variablen bricht das Skript
+sicherheitshalber ab.
+
+Falls der bestehende Container anders heißt, den Namen beim ersten Aufruf
+angeben:
+
+```bash
+CONTAINER_NAME=anderer_container_name ./deploy.sh
+```
+
+Bei einer Neuinstallation verwendet das Skript standardmäßig das Volume
+`autodarts_leaderboard_data`. Ein anderer Name kann bei Bedarf vorgegeben werden:
+
+```bash
+DATA_VOLUME_NAME=mein_leaderboard_volume ./deploy.sh
+```
+
+Der Stack sollte nach dieser Umstellung nicht zusätzlich über den Portainer
+Stack-Editor neu ausgerollt werden. Andernfalls könnten Portainer und Compose mit
+unterschiedlichen Projekt- oder Volume-Einstellungen arbeiten.
 
 ## Wichtige Umgebungsvariablen
 
@@ -134,10 +199,16 @@ Matches oder Ergebnisse zu überschreiben.
 Vor jedem Update sollte trotzdem eine Sicherung der Datenbank erstellt werden:
 
 ```bash
-docker compose stop app
+docker stop autodarts_app
 docker cp autodarts_app:/app/data/league.db ./league-backup.db
-docker compose build app
-docker compose up -d app
+docker start autodarts_app
+./deploy.sh
+```
+
+Beim Deployment über den Raspberry Pi genügt für das eigentliche Update:
+
+```bash
+./deploy.sh
 ```
 
 Wichtig: `docker compose down -v` löscht das Volume und darf bei einem normalen

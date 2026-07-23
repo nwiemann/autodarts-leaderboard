@@ -6,9 +6,9 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: production
-      SESSION_SECRET: ${SESSION_SECRET}
-      ADMIN_USER: ${ADMIN_USER}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET muss gesetzt sein}
+      ADMIN_USER: ${ADMIN_USER:?ADMIN_USER muss gesetzt sein}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD muss gesetzt sein}
       DB_FILE: /app/data/league.db
       TRUST_PROXY: "true"
     volumes:
@@ -18,3 +18,4 @@ services:
 
 volumes:
   leaderboard_data:
+    name: ${DATA_VOLUME_NAME:?DATA_VOLUME_NAME muss gesetzt sein}
