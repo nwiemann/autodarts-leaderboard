@@ -120,7 +120,6 @@ erstmaligen Anlegen eines Admin-Benutzers aus der Umgebungsvariable übernommen.
 Das Deployment erfolgt anschließend mit:
 
 ```bash
-chmod +x deploy.sh
 ./deploy.sh
 ```
 
