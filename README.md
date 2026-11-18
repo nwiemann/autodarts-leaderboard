@@ -2,6 +2,31 @@
 
 Kleine Liga-/Leaderboard-App für Autodarts mit Adminbereich, Match-Verwaltung und Tabellenansicht.
 
+## Tabellenberechnung
+
+Für jedes gespielte Match erhält der Sieger 2 Punkte, der Verlierer 0 Punkte.
+Die Rangfolge wird nach folgenden Regeln ermittelt:
+
+1. **Tabellenpunkte:** mehr Punkte stehen vor weniger Punkten.
+2. **Direkter Vergleich:** Bei Punktgleichheit zählen zuerst die Siege aus
+   den Begegnungen innerhalb der punktgleichen Gruppe, dann deren Leg-Differenz.
+   Das funktioniert auch bei drei oder mehr punktgleichen Spielern (Mini-Tabelle).
+   Bereits absolvierte Begegnungen zählen sofort; es muss nicht auf das Rückspiel
+   gewartet werden (Variante A).
+3. **Gesamte Leg-Differenz:** Ist der direkte Vergleich weiterhin gleich oder
+   gibt es zwischen zwei zu vergleichenden Spielern noch keine Begegnung, zählt
+   ihre Leg-Differenz aus sämtlichen gewerteten Matches.
+4. **Alphabet:** Bei weiterem Gleichstand entscheidet der Spielername.
+
+Eine Besonderheit unvollständiger Spielpläne: Vergleiche innerhalb einer Gruppe
+können zyklisch sein (A vor B, B vor C, C vor A). Da dann nicht alle paarweisen
+Vergleiche gleichzeitig erfüllt werden können, wird der Zyklus mit der Mini-Tabelle
+(deren Siege, Leg-Differenz), danach gesamter Leg-Differenz und zuletzt Alphabet
+reproduzierbar aufgelöst.
+
+Nur Matches mit Status `played` und beiden Leg-Ergebnissen werden gewertet.
+Spielwochen- und Matchfilter verändern den Spielplan, nicht die Gesamttabelle.
+
 ## Features
 
 - Spieler anlegen

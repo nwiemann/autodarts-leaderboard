@@ -4,6 +4,7 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
+const { calculateStandings } = require('./lib/standings');
 const {
   buildMatchFilterSql,
   getRelevantMatchWeek,
@@ -151,58 +152,7 @@ function getStandings() {
     SELECT * FROM matches
     WHERE status = 'played' AND home_legs IS NOT NULL AND away_legs IS NOT NULL
   `).all();
-
-  const table = players.map((player) => ({
-    id: player.id,
-    name: player.name,
-    played: 0,
-    wins: 0,
-    losses: 0,
-    legsFor: 0,
-    legsAgainst: 0,
-    legDiff: 0,
-    points: 0
-  }));
-
-  const byId = new Map(table.map((row) => [row.id, row]));
-
-  for (const match of playedMatches) {
-    const home = byId.get(match.home_player_id);
-    const away = byId.get(match.away_player_id);
-    if (!home || !away) continue;
-
-    home.played += 1;
-    away.played += 1;
-
-    home.legsFor += match.home_legs;
-    home.legsAgainst += match.away_legs;
-    away.legsFor += match.away_legs;
-    away.legsAgainst += match.home_legs;
-
-    if (match.home_legs > match.away_legs) {
-      home.wins += 1;
-      away.losses += 1;
-      home.points += 2;
-    } else if (match.away_legs > match.home_legs) {
-      away.wins += 1;
-      home.losses += 1;
-      away.points += 2;
-    }
-  }
-
-  for (const row of table) {
-    row.legDiff = row.legsFor - row.legsAgainst;
-  }
-
-  table.sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    if (b.wins !== a.wins) return b.wins - a.wins;
-    if (b.legDiff !== a.legDiff) return b.legDiff - a.legDiff;
-    if (b.legsFor !== a.legsFor) return b.legsFor - a.legsFor;
-    return a.name.localeCompare(b.name, 'de');
-  });
-
-  return table.map((row, index) => ({ rank: index + 1, ...row }));
+  return calculateStandings(players, playedMatches);
 }
 
 app.get('/', (req, res) => {
